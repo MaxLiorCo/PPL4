@@ -9,20 +9,35 @@ type PromisedStore<K, V> = {
 }
 
 
-// export function makePromisedStore<K, V>(): PromisedStore<K, V> {
-//     ???
-//     return {
-//         get(key: K) {
-//             ???
-//         },
-//         set(key: K, value: V) {
-//             ???
-//         },
-//         delete(key: K) {
-//             ???
-//         },
-//     }
-// }
+export function makePromisedStore<K, V>(): PromisedStore<K, V> {
+    let asyncStore = new Map();
+    return {
+        get(key: K) {
+            return new Promise(
+                function (resolve, reject) {
+                    let value = asyncStore.get(key);
+                    if (value != undefined) {
+                        resolve(value);
+                    } else {
+                        reject(MISSING_KEY);
+                    }
+                });
+        },
+        set(key: K, value: V) {
+            return new Promise(
+                function (resolve) {
+                    asyncStore.set(key, value);
+                    resolve();
+                });
+        },
+        delete(key: K) {
+            return new Promise(
+                function (resolve, reject) {
+                    asyncStore.delete(key) ? resolve() : reject(MISSING_KEY);
+            });
+        },
+    }
+}
 
 // export function getAll<K, V>(store: PromisedStore<K, V>, keys: K[]): ??? {
 //     ???
@@ -52,3 +67,4 @@ type PromisedStore<K, V> = {
 // export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...(???)[]]): Promise<any> {
 //     ???
 // }
+

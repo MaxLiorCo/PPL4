@@ -21,6 +21,14 @@ describe('2.1 (PromisedStore)', () => {
         await expect(store.get('a')).to.be.rejectedWith(MISSING_KEY)
     })
 
+    it('update existed value'), async() => {
+        const store = makePromisedStore();
+        await store.set('a', 42);
+        await store.set('a', 44);
+        const a = await store.get('a');
+        expect(a).to.equal(44);
+    }
+
     it('getAll retrieves an array', async () => {
         const store = makePromisedStore()
         await store.set('a', 42)

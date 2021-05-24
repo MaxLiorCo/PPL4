@@ -10,38 +10,31 @@ type PromisedStore<K, V> = {
 
 
 export function makePromisedStore<K, V>(): PromisedStore<K, V> {
-    let asyncStore = new Map();
+    let asyncStore: Map<K, V> = new Map();
     return {
         get(key: K) {
-            return new Promise(
-                function (resolve, reject) {
-                    let value = asyncStore.get(key);
-                    if (value != undefined) {
-                        resolve(value);
-                    } else {
-                        reject(MISSING_KEY);
-                    }
-                });
+            let value = asyncStore.get(key);
+            if (value !== undefined) {
+                return Promise.resolve(value);
+            } else {
+                return Promise.reject(MISSING_KEY);
+            }
         },
         set(key: K, value: V) {
-            return new Promise(
-                function (resolve) {
-                    asyncStore.set(key, value);
-                    resolve();
-                });
+            asyncStore.set(key, value);
+            return Promise.resolve();
         },
         delete(key: K) {
-            return new Promise(
-                function (resolve, reject) {
-                    asyncStore.delete(key) ? resolve() : reject(MISSING_KEY);
-            });
+            return asyncStore.delete(key) ? Promise.resolve() : Promise.reject(MISSING_KEY);
         },
     }
 }
 
-// export function getAll<K, V>(store: PromisedStore<K, V>, keys: K[]): ??? {
-//     ???
-// }
+export function getAll<K, V>(store: PromisedStore<K, V>, keys: K[]): Promise<V[]> {
+    const promises = keys.map(key => store.get(key));
+    const values: Promise<V[]> = Promise.all(promises);
+    return values;
+}
 
 /* 2.2 */
 

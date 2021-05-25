@@ -10,7 +10,7 @@ type PromisedStore<K, V> = {
 
 
 export function makePromisedStore<K, V>(): PromisedStore<K, V> {
-    let asyncStore: Map<K, V> = new Map();
+    const asyncStore: Map<K, V> = new Map();
     return {
         get(key: K) {
             let value = asyncStore.get(key);
@@ -38,26 +38,49 @@ export function getAll<K, V>(store: PromisedStore<K, V>, keys: K[]): Promise<V[]
 
 /* 2.2 */
 
-// ??? (you may want to add helper functions here)
-//
-// export function asycMemo<T, R>(f: (param: T) => R): (param: T) => Promise<R> {
-//     ???
-// }
+export function asycMemo<T, R>(f: (param: T) => R): (param: T) => Promise<R> {
+    const asyncStore: PromisedStore<T, R> = makePromisedStore();
+    async function retFunc(param: T): Promise<R> {
+        let value;
+        try {
+            value = await asyncStore.get(param);
+            return value;
+        } catch (err) {
+            value = f(param);
+            await asyncStore.set(param, value);
+            return value;
+        }
+    }
+    return retFunc;
+}
 
 /* 2.3 */
 
-// export function lazyFilter<T>(genFn: () => Generator<T>, filterFn: ???): ??? {
-//     ???
-// }
+export function lazyFilter<T>(genFn: () => Generator<T>, filterFn: (x: T) => boolean): () => Generator<T> {
+    const gen = genFn();
+    function* lazyGenerator() {
+        for (let i of gen) {
+            if (filterFn(i)) {
+                yield i;
+            }
+        }
+    }
+    return lazyGenerator;
+}
 
-// export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: ???): ??? {
-//     ???
-// }
+export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: (x: T) => T): () => Generator<T> {
+    const gen = genFn();
+    function* lazyGenerator() {
+        for (let i of gen) {
+            yield mapFn(i);
+        }
+    }
+    return lazyGenerator;
+}
 
 /* 2.4 */
-// you can use 'any' in this question
 
-// export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...(???)[]]): Promise<any> {
-//     ???
-// }
+export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...(???)[]]): Promise<any> {
+    let failureCounter = 0;
+}
 

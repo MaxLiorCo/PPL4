@@ -1,3 +1,4 @@
+
 /* 2.1 */
 
 export const MISSING_KEY = '___MISSING___'
@@ -32,8 +33,9 @@ export function makePromisedStore<K, V>(): PromisedStore<K, V> {
 
 export function getAll<K, V>(store: PromisedStore<K, V>, keys: K[]): Promise<V[]> {
     const promises = keys.map(key => store.get(key));
-    const values: Promise<V[]> = Promise.all(promises);
-    return values;
+    return Promise.all(promises)
+    .then((values) => Promise.resolve(values))
+    .catch((error) => Promise.reject(error));
 }
 
 /* 2.2 */
@@ -68,7 +70,7 @@ export function lazyFilter<T>(genFn: () => Generator<T>, filterFn: (x: T) => boo
     return lazyGenerator;
 }
 
-export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: (x: T) => T): () => Generator<T> {
+export function lazyMap<T>(genFn: () => Generator<T>, mapFn: (x: T) => T): () => Generator<T> {
     const gen = genFn();
     function* lazyGenerator() {
         for (let i of gen) {
@@ -80,7 +82,7 @@ export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: (x: T) => T): ()
 
 /* 2.4 */
 
-export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...(???)[]]): Promise<any> {
+export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...((x: Promise<any>) => Promise<any>)[]]): Promise<any> {
     let failureCounter = 0;
 }
 

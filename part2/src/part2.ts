@@ -79,8 +79,27 @@ export function lazyMap<T, R>(genFn: () => Generator<T>, mapFn: (x: T) => T): ()
 }
 
 /* 2.4 */
-
-export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...(???)[]]): Promise<any> {
+export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...((x: any) => Promise<any>)[]]): Promise<any> {
     let failureCounter = 0;
+    let prevRes = await fns[0]();
+    let currRes;
+    let first = true
+    for (let func of fns) {
+        if (first) {
+            first = false;
+            continue;
+        }
+        while (failureCounter < 3) {
+            try {
+                currRes = await func(prevRes);
+                break;
+            } catch(err) {
+                if(++failureCounter === 3) return Promise.reject();
+                await new Promise((resolve) =>  setTimeout(()=> resolve(null), 2000));
+            }
+        }
+        failureCounter = 0;
+        prevRes = currRes;
+    }
+    return currRes;
 }
-

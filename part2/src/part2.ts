@@ -84,6 +84,7 @@ export function lazyMap<T>(genFn: () => Generator<T>, mapFn: (x: T) => T): () =>
 export async function asyncWaterfallWithRetry(fns: [() => Promise<any>, ...((x: any) => Promise<any>)[]]): Promise<any> {
     let failureCounter = 0;
     let prevRes;
+    // for first case
     while (failureCounter < 3) {
         try {
             prevRes = await fns[0]();

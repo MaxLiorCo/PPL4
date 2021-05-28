@@ -197,13 +197,25 @@ export const typeofLetrec = (exp: LetrecExp, tenv: TEnv): Result<TExp> => {
 // Purpose: compute the type of a define
 // Typing rule:
 //   (define (var : texp) val)
-// Not implemented
+// variable _x1
+// expressions _e1
+// and type expressions _S1, _U1:
+// If     _Tenv |- _e1:_S1
+//        _Tenv o { _e1: _S1} |- _x1:_S1
+// Then   _Tenv |- (define _x1 _e1) : _U1
+
 export const typeofDefine = (exp: DefineExp, tenv: TEnv): Result<VoidTExp> => {
     return makeOk(makeVoidTExp());
 };
 
 // Purpose: compute the type of a program
 // Typing rule:
-// Not implemented: Thread the TEnv (as in L1)
-export const typeofProgram = (exp: Program, tenv: TEnv): Result<TExp> =>
-    makeFailure("Not implemented");
+//  Program
+//  expressions _ei (1<=i) | none
+//  and Type expressions _Ti (1<=i)
+//  If      _Tenv |- _e1:_T1
+//          ...
+//          _Tenv |- _ek:_Tk
+//  Then    _Tenv |- Program: TupleTExp
+export const typeofProgram = (exp: Program, tenv: TEnv): Result<TExp> => typeofExps(exp.exps, tenv)
+

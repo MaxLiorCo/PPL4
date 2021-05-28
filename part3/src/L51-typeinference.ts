@@ -291,5 +291,8 @@ export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
 //      type<method_k>(class-tenv) = mk
 // Then type<class(type fields methods)>(tend) = = [t1 * ... * tn -> type]
 export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
-    return makeFailure("TODO typeofClass");
+    const classEnv = E.makeExtendTEnv(R.map((v: A.VarDecl) => v.var , exp.fields),
+                                        R.map((v: A.VarDecl) => v.texp, exp.fields),
+                                        tenv);
+    
 };

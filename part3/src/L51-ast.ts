@@ -463,13 +463,55 @@ const unparseClassExp = (ce: ClassExp, unparseWithTVars?: boolean): Result<strin
 // Collect class expressions in parsed AST so that they can be passed to the type inference module
 
 export const parsedToClassExps = (p: Parsed): ClassExp[] => 
-    // isProgram(p) ? map(e => {
-    //         if (isClassExp(e))
-    //             return e;
-    //     }, p.exps) :
-    //     isClassExp(p) ? p :
-    //     p;
+    isProgram(p) ? [].concat(map(getAllClassExps, p.exps)) :
+    isExp(p) ? getAllClassExps(p) :
     [];
+
+
+
+const getAllClassExps = (e: Exp): ClassExp[] =>
+    isCExp(e) ? [].concat(getAllClassCExps(e)) :
+    isDefineExp(e) ? getAllClassCExps(e.val) :
+    e;
+
+
+const getAllClassCExps = (e: CExp): ClassExp[] => {
+    // if (isAppExp(e)) {
+    //     return 
+    // }
+    // if (isNumExp(e) || isStrExp(e) || isBoolExp(e) || isPrimOp(e) || isVarRef(e)) {
+    //     reurn;t
+    // }
+    // isNumExp(e) ?  :
+    // isStrExp(e) ? e :
+    // isBoolExp(e) ? e :
+    // isPrimOp(e) ? e :
+    // isVarRef(e) ? e :
+    // // AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp
+    // isAppExp(e) ? (() => {
+    //     getAllSubCExps(e.rator);
+    //     map(rand => getAllSubCExps(rand), e.rands);
+    // })() :
+    // isIfExp(e) ? (() => {
+    //     getAllSubCExps(e.test);
+    //     getAllSubCExps(e.then);
+    //     getAllSubCExps(e.alt);
+    // })() :
+    // isLetExp(e) ? (() => {
+    //     map(getAllSubCExps(e.body);
+    // })() :
+    // isLetrecExp(e) ? unparseLetrecExp(e, unparseWithTVars) :
+    // isProcExp(e) ? unparseProcExp(e, unparseWithTVars) :
+    // isLitExp(e) ? makeOk(unparseLitExp(e)) :
+    // isSetExp(e) ? unparseSetExp(e, unparseWithTVars) :
+    // isClassExp(e) ? e :
+    // // DefineExp | Program
+    // isDefineExp(e) ? safe2((vd: string, val: string) => makeOk(`(define ${vd} ${val})`))
+    //                     (unparseVarDecl(e.var, unparseWithTVars), unparse(e.val, unparseWithTVars)) :
+    // isProgram(e) ? bind(unparseLExps(e.exps, unparseWithTVars), (exps: string) => makeOk(`(L5 ${exps})`)) :
+    // e;
+}
+
 
 
 // L51 

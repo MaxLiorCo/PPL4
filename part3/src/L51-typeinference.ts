@@ -9,6 +9,7 @@ import * as T from "./TExp51";
 import { allT, first, rest, isEmpty } from "../shared/list";
 import { isNumber, isString } from '../shared/type-predicates';
 import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult } from "../shared/result";
+import { isDefineExp } from "./L51-ast";
 
 // Purpose: Make type expressions equivalent by deriving a unifier
 // Return an error if the types are not unifiable.
@@ -238,9 +239,18 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // Purpose: compute the type of a define
 // Typing rule:
 //   (define (var : texp) val)
+//? v   this is my assumption   v
+// variable _x1
+// expressions _e1
+// and type expressions _S1, _U1:
+// If     _Tenv |- _e1:_S1
+//        _Tenv o { _e1: _S1} |- _x1:_S1
+// Then   _Tenv |- (define _x1 _e1) : _U1
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-    return makeFailure('TODO typeofDefine');
+
+    const constraints = bind(types, (types: T.TExp[]) => zipWithResult((typeI, ti) => checkEqualType(typeI, ti, exp), types, tis))
+    return bind(constraints, _ => typeofExps(exp.body, tenvBody));
 };
 
 // Purpose: compute the type of a program
@@ -252,8 +262,11 @@ export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
     typeofProgramExps(first(exp.exps), rest(exp.exps), tenv);
 
 const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TExp> => 
-    makeFailure('TODO typeofProgramExps');
-
+    isEmpty(exps) ?     typeofExp(exp, tenv) :
+    isDefineExp(exp)?   bind(typeofExp(exp, tenv), (texp) => typeofProgramExps(first(exps), rest(exps),
+                                            E.makeExtendTEnv([T.makeFreshTVar().var] , [texp] ,tenv))) :
+                        bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
+    //? should we really ignore texp when not relevant to the rest of the program
 
 // Purpose: compute the type of a literal expression
 //      - Only need to cover the case of Symbol and Pair

@@ -8,7 +8,7 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isNum
 import { applyTEnv, makeEmptyTEnv, makeExtendTEnv, TEnv } from "../imp/TEnv";
 import { isProcTExp, makeBoolTExp, makeNumTExp, makeProcTExp, makeStrTExp, makeVoidTExp,
          parseTE, unparseTExp,
-         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp } from "./TExp51";
+         BoolTExp, NumTExp, StrTExp, TExp, VoidTExp, makeEmptyTupleTExp, makeNonEmptyTupleTExp, NonTupleTExp} from "./TExp51";
 import { isEmpty, allT, first, rest } from '../shared/list';
 import { Result, makeFailure, bind, makeOk, safe3, safe2, zipWithResult } from '../shared/result';
 import { parse as p } from "../shared/parser";
@@ -210,12 +210,5 @@ export const typeofDefine = (exp: DefineExp, tenv: TEnv): Result<VoidTExp> => {
 
 // Purpose: compute the type of a program
 // Typing rule:
-//  Program
-//  expressions _ei (1<=i) | none
-//  and Type expressions _Ti (1<=i)
-//  If      _Tenv |- _e1:_T1
-//          ...
-//          _Tenv |- _ek:_Tk
-//  Then    _Tenv |- Program: TupleTExp
-export const typeofProgram = (exp: Program, tenv: TEnv): Result<TExp> => typeofExps(exp.exps, tenv)
-
+export const typeofProgram = (exp: Program, tenv: TEnv): Result<TExp> =>
+    makeFailure("Not Implemented")

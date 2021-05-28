@@ -341,17 +341,14 @@ const parseGoodClassExp = (typeName: Sexp, varDecls: Sexp, bindings: Sexp): Resu
     if (!isGoodBindings(bindings)) {
         return makeFailure('Malformed bindings in "class" expression');
     }
-    const createTypedVarDecl = (variable: Sexp): Result<VarDecl> => {
-        return isArray(variable) && variable.length == 3 && allT(isString, variable) && variable[1] == ':' ? makeOk(makeVarDecl(variable[0], 
-                                                                                                                    makeTVar(variable[2]))) :
-        !isArray(variable) && isString(variable) ? makeOk(makeVarDecl(variable, makeFreshTVar())) :
-        makeFailure(`Variable declaration: ${JSON.stringify(variable)} is invalid.`);
+    if (!isString(typeName)) {
+        return makeFailure(`Type of class: ${JSON.stringify(typeName)} is not string!`);
     }
-    // it's pretty stupid, since we unbind and then bind again.
-    // but this way we make sure that after passing the next line, we didn't fail and
-    // resultVars contains only Result<VarDecl> and not Failure.
-    const resultedVars: Result<VarDecl>[] = map((variable) => bind(createTypedVarDecl(variable), (x) => makeOk(x)), varDecls);
-    //const vars: VarDecl[] = map((result: Result<VarDecl>) => either(result, (x) => x, (y) => null), resultedVars)
+    const resultedVars: Result<VarDecl[]> = mapResult((variable) => parseVarDecl(variable), varDecls);
+    const bindingsResult = parseBindings(bindings);
+    return safe2((vars: VarDecl[], bindings: Binding[]) => makeOk(makeClassExp(makeTVar(typeName), vars, bindings)))
+                (resultedVars, bindingsResult);
+}  
 
 
 
@@ -466,8 +463,14 @@ const unparseClassExp = (ce: ClassExp, unparseWithTVars?: boolean): Result<strin
 // Collect class expressions in parsed AST so that they can be passed to the type inference module
 
 export const parsedToClassExps = (p: Parsed): ClassExp[] => 
-    // TODO parsedToClassExps
+    // isProgram(p) ? map(e => {
+    //         if (isClassExp(e))
+    //             return e;
+    //     }, p.exps) :
+    //     isClassExp(p) ? p :
+    //     p;
     [];
+
 
 // L51 
 export const classExpToClassTExp = (ce: ClassExp): ClassTExp => 

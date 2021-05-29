@@ -10,7 +10,7 @@ import { Sexp, Token } from 's-expression';
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString } from '../imp/L5-value';
 import { allT, first, rest, second, isEmpty } from '../shared/list';
 import { parse as p, isToken, isSexpString } from "../shared/parser";
-import { Result, bind, makeFailure, mapResult, makeOk, safe2, safe3, either } from "../shared/result";
+import { Result, bind, makeFailure, mapResult, makeOk, safe2, safe3, either, isOk } from "../shared/result";
 import { isArray, isString, isNumericString, isIdentifier } from "../shared/type-predicates";
 import { isTVar, makeFreshTVar, makeTVar, parseTExp, unparseTExp, TVar, TExp } from './TExp51';
 import { makeClassTExp, ClassTExp } from "./TExp51";
@@ -341,14 +341,20 @@ const parseGoodClassExp = (typeName: Sexp, varDecls: Sexp, bindings: Sexp): Resu
     if (!isGoodBindings(bindings)) {
         return makeFailure('Malformed bindings in "class" expression');
     }
-    if (!isString(typeName)) {
-        return makeFailure(`Type of class: ${JSON.stringify(typeName)} is not string!`);
+    const createTypedVarDecl = (variable: Sexp): Result<VarDecl> => {
+        return isArray(variable) && variable.length == 3 && allT(isString, variable) && variable[1] == ':' ? makeOk(makeVarDecl(variable[0], 
+                                                                                                                    makeTVar(variable[2]))) :
+        !isArray(variable) && isString(variable) ? makeOk(makeVarDecl(variable, makeFreshTVar())) :
+        makeFailure(`Variable declaration: ${JSON.stringify(variable)} is invalid.`);
     }
-    const resultedVars: Result<VarDecl[]> = mapResult((variable) => parseVarDecl(variable), varDecls);
-    const bindingsResult = parseBindings(bindings);
-    return safe2((vars: VarDecl[], bindings: Binding[]) => makeOk(makeClassExp(makeTVar(typeName), vars, bindings)))
-                (resultedVars, bindingsResult);
-}  
+    // it's pretty stupid, since we unbind and then bind again.
+    // but this way we make sure that after passing the next line, we didn't fail and
+    // resultVars contains only Result<VarDecl> and not Failure.
+    const resultedVars: VarDecl[] = map((variable) => {
+         let temp_decl = bind(createTypedVarDecl(variable), (x) => makeOk(x))
+         return isOk(temp_decl)? temp_decl.value : null ///
+     } , varDecls);
+    //const vars: VarDecl[] = map((result: Result<VarDecl>) => either(result, (x) => x, (y) => null), resultedVars)
 
 
 

@@ -11,6 +11,7 @@ import { isNumber, isString } from '../shared/type-predicates';
 import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk } from "../shared/result";
 import { isDefineExp } from "./L51-ast";
 
+const util = require('util') // TODO remove this
 // Purpose: Make type expressions equivalent by deriving a unifier
 // Return an error if the types are not unifiable.
 // Exp is only passed for documentation purposes.
@@ -123,8 +124,11 @@ export const inferTypeOf = (concreteExp: string): Result<string> =>
 
 // Purpose: Compute the type of an expression
 // Traverse the AST and check the type according to the exp type.
-export const typeofExp = (exp: A.Parsed, tenv: E.TEnv): Result<T.TExp> =>
-    A.isNumExp(exp) ? makeOk(T.makeNumTExp()) :
+export const typeofExp = (exp: A.Parsed, tenv: E.TEnv): Result<T.TExp> =>{
+    console.log("IN typeofExp : exp & env")
+    console.log(util.inspect(exp, {showHidden: false, depth: null})) //TODO REMOVE debug
+    console.log(util.inspect(tenv, {showHidden: false, depth: null}))
+    return A.isNumExp(exp) ? makeOk(T.makeNumTExp()) :
     A.isBoolExp(exp) ? makeOk(T.makeBoolTExp()) :
     A.isStrExp(exp) ? makeOk(T.makeStrTExp()) :
     A.isPrimOp(exp) ? TC.typeofPrim(exp) :
@@ -141,7 +145,7 @@ export const typeofExp = (exp: A.Parsed, tenv: E.TEnv): Result<T.TExp> =>
     A.isLitExp(exp) ? typeofLit(exp) :
     A.isSetExp(exp) ? typeofSet(exp, tenv) :
     exp;
-
+}
 // Purpose: Compute the type of a sequence of expressions
 // Check all the exps in a sequence - return type of last.
 // Pre-conditions: exps is not empty.
@@ -266,11 +270,17 @@ export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
 
 const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TExp> => 
     isEmpty(exps) ?     typeofExp(exp, tenv) :
-    isDefineExp(exp)?   bind(typeofExp(exp, tenv), (texp) => typeofProgramExps(first(exps), rest(exps),
-                                            E.makeExtendTEnv([T.makeFreshTVar().var] , [texp] ,tenv))) :
+    isDefineExp(exp)?   safe2((defineTval: T.TExp, expTval: T.TExp) => typeofProgramExps(first(exps), rest(exps),
+                                             E.makeExtendTEnv([exp.var.var] , [expTval] ,tenv)))    
+                                        (typeofExp(exp, tenv), typeofExp(exp.val, tenv)) :
                         bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
     //? should we really ignore texp when not relevant to the rest of the program?
 
+// const _res_to_val = <T>(res:Result<T>): T => 
+//     isOk(res)? res.value : undefined
+
+//     bind(typeofExp(exp, tenv), _ => typeofProgramExps(first(exps), rest(exps),
+//                                             E.makeExtendTEnv([exp.var.var] , [_res_to_val(typeofExp(exp.val, tenv))] ,tenv))) : //! changed to the inside of define
 // Purpose: compute the type of a literal expression
 //      - Only need to cover the case of Symbol and Pair
 //      - for a symbol - record the value of the symbol in the SymbolTExp

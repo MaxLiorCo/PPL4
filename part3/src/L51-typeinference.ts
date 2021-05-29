@@ -11,6 +11,8 @@ import { isNumber, isString } from '../shared/type-predicates';
 import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk } from "../shared/result";
 import { isDefineExp } from "./L51-ast";
 
+const util = require('util');
+
 // Purpose: Make type expressions equivalent by deriving a unifier
 // Return an error if the types are not unifiable.
 // Exp is only passed for documentation purposes.
@@ -316,5 +318,7 @@ export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
     const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, classTEnv),
                                                             (valTE: T.TExp) => checkEqualType(varTE, valTE, exp)),
                                         varTEs, vals);
+    const aaa = R.zipWith((v, t) => ([v, t]), vars, varTEs);
+    //console.log(util.inspect(aaa, {showHidden: false, depth: null}));
     return bind(constraints, _ => makeOk(T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs))));
 };

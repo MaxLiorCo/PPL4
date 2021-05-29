@@ -95,6 +95,10 @@ export const typeofPrim = (p: PrimOp): Result<TExp> =>
     (p.op === 'string=?') ? parseTE('(T1 * T2 -> boolean)') :
     (p.op === 'display') ? parseTE('(T -> void)') :
     (p.op === 'newline') ? parseTE('(Empty -> void)') :
+    //* v   my part of the code    v
+    (p.op === 'cons') ? parseTE('(T1 * T2 -> pair)'):
+    (p.op === 'car') ? parseTE('(pair -> T)'):
+    (p.op === 'cdr') ? parseTE('(pair -> T)'):
     makeFailure(`Primitive not yet implemented: ${p.op}`);
 
 // Purpose: compute the type of an if-exp

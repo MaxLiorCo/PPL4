@@ -248,9 +248,8 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // Then   _Tenv |- (define _x1 _e1) : _U1
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-
-    const constraints = bind(types, (types: T.TExp[]) => zipWithResult((typeI, ti) => checkEqualType(typeI, ti, exp), types, tis))
-    return bind(constraints, _ => typeofExps(exp.body, tenvBody));
+    const valTE = typeofExp(exp.val, tenv);
+    return bind(valTE, (valTE: T.TExp) => makeOk(T.makeVoidTExp())); //? removed : exp.var.texp = valTE;
 };
 
 // Purpose: compute the type of a program
@@ -266,7 +265,7 @@ const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TE
     isDefineExp(exp)?   bind(typeofExp(exp, tenv), (texp) => typeofProgramExps(first(exps), rest(exps),
                                             E.makeExtendTEnv([T.makeFreshTVar().var] , [texp] ,tenv))) :
                         bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
-    //? should we really ignore texp when not relevant to the rest of the program
+    //? should we really ignore texp when not relevant to the rest of the program?
 
 // Purpose: compute the type of a literal expression
 //      - Only need to cover the case of Symbol and Pair
@@ -278,9 +277,19 @@ export const typeofLit = (exp: A.LitExp): Result<T.TExp> =>
 // Purpose: compute the type of a set! expression
 // Typing rule:
 //   (set! var val)
+// For every:   type environment _Tenv,
+//              variable _x1
+//              expressions _e1
+//              and type expressions _S1, _S2, _U1:
+// If       _Tenv |- _e1:_S1
+// 	        _Tenv o { _x1: _S1} |- _x1:_S2
+// Then     _Tenv |- (set! _x1 _e1) : _U1
 // TODO - write the typing rule for set-exp
 export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-    return makeFailure('TODO typeofSet');
+    const valTE = typeofExp(exp.val, tenv);
+    const var_is_defined = E.applyTEnv(tenv, exp.var.var)
+    return safe2((valTE, prev_varTE) => makeOk(T.makeVoidTExp()))(valTE, var_is_defined) 
+    //? we only check if _e1 currect & _x1 exists. not changing _x1 Texp
 };
 
 // Purpose: compute the type of a class-exp(type fields methods)
@@ -291,8 +300,5 @@ export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
 //      type<method_k>(class-tenv) = mk
 // Then type<class(type fields methods)>(tend) = = [t1 * ... * tn -> type]
 export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
-    const classEnv = E.makeExtendTEnv(R.map((v: A.VarDecl) => v.var , exp.fields),
-                                        R.map((v: A.VarDecl) => v.texp, exp.fields),
-                                        tenv);
-    
+    return makeFailure("TODO typeofClass");
 };

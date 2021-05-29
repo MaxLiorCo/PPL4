@@ -291,8 +291,15 @@ export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
 //      type<method_k>(class-tenv) = mk
 // Then type<class(type fields methods)>(tend) = = [t1 * ... * tn -> type]
 export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
-    const classEnv = E.makeExtendTEnv(R.map((v: A.VarDecl) => v.var , exp.fields),
+    const classTEnv = E.makeExtendTEnv(R.map((v: A.VarDecl) => v.var , exp.fields),
                                         R.map((v: A.VarDecl) => v.texp, exp.fields),
                                         tenv);
+    const vars = R.map((b) => b.var.var, exp.methods);
+    const vals = R.map((b) => b.val, exp.methods);
+    const varTEs = R.map((b) => b.var.texp, exp.methods);
+    const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, classTEnv),
+                                                            (valTE: T.TExp) => checkEqualType(varTE, valTE, exp)),
+                                        varTEs, vals);
+    return bind(constraints, _ => makeOk(T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs))));
     
 };

@@ -103,7 +103,11 @@ const checkNoOccurrence = (tvar: T.TVar, te: T.TExp, exp: A.Exp): Result<true> =
 // so that the user defined types are known to the type inference system.
 // For each class (class : typename ...) add a pair <class.typename classTExp> to TEnv
 export const makeTEnvFromClasses = (parsed: A.Parsed): E.TEnv => {
-    // TODO makeTEnvFromClasses
+    const allClasses: A.ClassExp[] = A.parsedToClassExps(parsed);
+    const typeNamesVar = R.map((c: A.ClassExp) => c.typeName.var, allClasses;
+    const classTExps =  mapResult((c: A.ClassExp) => typeofClass(c, E.makeEmptyTEnv()), allClasses);
+    E.makeExtendTEnv(map((c: A.ClassExp) => c.typeName.var, allClasses),
+                        map((c: A.ClassExp) => bind(typeofClass(c), (a) => ), allClasses))
     return E.makeEmptyTEnv();
 }
 

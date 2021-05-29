@@ -337,5 +337,7 @@ export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
     const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, classTEnv),
                                                             (valTE: T.TExp) => checkEqualType(varTE, valTE, exp)),
                                         varTEs, vals);
+    const aaa = R.zipWith((v, t) => ([v, t]), vars, varTEs);
+    //console.log(util.inspect(aaa, {showHidden: false, depth: null}));
     return bind(constraints, _ => makeOk(T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs))));
 };

@@ -10,6 +10,7 @@ import { allT, first, rest, isEmpty } from "../shared/list";
 import { isNumber, isString } from '../shared/type-predicates';
 import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk } from "../shared/result";
 import { isDefineExp } from "./L51-ast";
+import { isExtEnv } from "../imp/L5-env";
 
 const util = require('util') // TODO remove this
 // Purpose: Make type expressions equivalent by deriving a unifier
@@ -252,12 +253,14 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // expressions _e1
 // and type expressions _S1, _U1:
 // If     _Tenv |- _e1:_S1
-//        _Tenv o { _e1: _S1} |- _x1:_S1
+//        _Tenv o { _x1: _S1} |- _e1:_S1 //! switched x e
 // Then   _Tenv |- (define _x1 _e1) : _U1
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-    const valTE = typeofExp(exp.val, tenv);
-    return bind(valTE, (valTE: T.TExp) => makeOk(T.makeVoidTExp())); //? removed : exp.var.texp = valTE;
+    let valTE:Result<T.TExp>;
+    A.isProcExp(exp.val)?   valTE = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv)) :
+                            valTE = typeofExp(exp.val, tenv)
+    return bind(valTE, _ => makeOk(T.makeVoidTExp())); 
 };
 
 // Purpose: compute the type of a program
@@ -270,14 +273,22 @@ export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
 
 const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TExp> => 
     isEmpty(exps) ?     typeofExp(exp, tenv) :
-    isDefineExp(exp)?   safe2((defineTval: T.TExp, expTval: T.TExp) => typeofProgramExps(first(exps), rest(exps),
-                                             E.makeExtendTEnv([exp.var.var] , [expTval] ,tenv)))    
-                                        (typeofExp(exp, tenv), typeofExp(exp.val, tenv)) :
+    isDefineExp(exp)?   bind(typeofExp(exp, tenv), _ => bind(typeofExp(exp.val, extEnvIfProc(exp, tenv)),
+                                                            (expTVal: T.TExp)=> typeofProgramExps(first(exps), rest(exps),
+                                                                                    E.makeExtendTEnv([exp.var.var] , [expTVal] ,tenv)))):
                         bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
     //? should we really ignore texp when not relevant to the rest of the program?
 
+const extEnvIfProc = ( exp: A.Exp , tenv: E.TEnv): E.TEnv =>
+    isDefineExp(exp) && A.isProcExp(exp.val)?   
+                        E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv) :
+                        tenv 
+
 // const _res_to_val = <T>(res:Result<T>): T => 
 //     isOk(res)? res.value : undefined
+// safe2((defineTval: T.TExp, expTval: T.TExp) => typeofProgramExps(first(exps), rest(exps),
+//                                              E.makeExtendTEnv([exp.var.var] , [expTval] ,tenv)))    
+//                                         (typeofExp(exp, tenv), typeofExp(exp.val, tenv)) :
 
 //     bind(typeofExp(exp, tenv), _ => typeofProgramExps(first(exps), rest(exps),
 //                                             E.makeExtendTEnv([exp.var.var] , [_res_to_val(typeofExp(exp.val, tenv))] ,tenv))) : //! changed to the inside of define

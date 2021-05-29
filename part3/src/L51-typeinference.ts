@@ -276,7 +276,10 @@ const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TE
 //      - for a symbol - record the value of the symbol in the SymbolTExp
 //        so that precise type checking can be made on ground symbol values.
 export const typeofLit = (exp: A.LitExp): Result<T.TExp> =>
-    makeFailure(`TODO typeofLit`);
+    V.isSymbolSExp(exp.val) ? makeOk(T.makeSymbolTExp( exp.val)) :
+    V.isCompoundSExp(exp.val) ? makeOk(T.makePairTExp()): //* I assume that list is also pair
+    makeFailure("LitExp is neither symbol nor pair")
+
 
 // Purpose: compute the type of a set! expression
 // Typing rule:
@@ -314,5 +317,4 @@ export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
                                                             (valTE: T.TExp) => checkEqualType(varTE, valTE, exp)),
                                         varTEs, vals);
     return bind(constraints, _ => makeOk(T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs))));
-    
 };

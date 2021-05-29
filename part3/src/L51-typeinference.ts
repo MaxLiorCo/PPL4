@@ -8,7 +8,7 @@ import * as E from "../imp/TEnv";
 import * as T from "./TExp51";
 import { allT, first, rest, isEmpty } from "../shared/list";
 import { isNumber, isString } from '../shared/type-predicates';
-import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult } from "../shared/result";
+import { Result, makeFailure, makeOk, bind, safe2, zipWithResult, mapResult, isOk } from "../shared/result";
 import { isDefineExp } from "./L51-ast";
 
 // Purpose: Make type expressions equivalent by deriving a unifier
@@ -103,12 +103,12 @@ const checkNoOccurrence = (tvar: T.TVar, te: T.TExp, exp: A.Exp): Result<true> =
 // so that the user defined types are known to the type inference system.
 // For each class (class : typename ...) add a pair <class.typename classTExp> to TEnv
 export const makeTEnvFromClasses = (parsed: A.Parsed): E.TEnv => {
+    const emptyTEnv = E.makeEmptyTEnv();
     const allClasses: A.ClassExp[] = A.parsedToClassExps(parsed);
-    const typeNamesVar = R.map((c: A.ClassExp) => c.typeName.var, allClasses;
-    const classTExps =  mapResult((c: A.ClassExp) => typeofClass(c, E.makeEmptyTEnv()), allClasses);
-    E.makeExtendTEnv(map((c: A.ClassExp) => c.typeName.var, allClasses),
-                        map((c: A.ClassExp) => bind(typeofClass(c), (a) => ), allClasses))
-    return E.makeEmptyTEnv();
+    const typeNamesVar = R.map((c: A.ClassExp) => c.typeName.var, allClasses);
+    const classTExps =  mapResult((c: A.ClassExp) => typeofClass(c, emptyTEnv), allClasses);
+    const blyat = bind(classTExps, (texps: T.TExp[]) => makeOk(E.makeExtendTEnv(typeNamesVar, texps, emptyTEnv))); 
+    return isOk(blyat) ? blyat.value : emptyTEnv;
 }
 
 // Purpose: Compute the type of a concrete expression

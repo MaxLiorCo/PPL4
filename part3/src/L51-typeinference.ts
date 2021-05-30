@@ -107,9 +107,11 @@ const checkNoOccurrence = (tvar: T.TVar, te: T.TExp, exp: A.Exp): Result<true> =
 export const makeTEnvFromClasses = (parsed: A.Parsed): E.TEnv => {
     const emptyTEnv = E.makeEmptyTEnv();
     const allClasses: A.ClassExp[] = A.parsedToClassExps(parsed);
+    //console.log(util.inspect(allClasses, {showHidden: false, depth: null}))
     const typeNamesVar = R.map((c: A.ClassExp) => c.typeName.var, allClasses);
     const classTExps =  mapResult((c: A.ClassExp) => typeofClass(c, emptyTEnv), allClasses);
-    const blyat = bind(classTExps, (texps: T.TExp[]) => makeOk(E.makeExtendTEnv(typeNamesVar, texps, emptyTEnv))); 
+    const blyat = bind(classTExps, (texps: T.TExp[]) => makeOk(E.makeExtendTEnv(typeNamesVar, texps, emptyTEnv)));
+
     return isOk(blyat) ? blyat.value : emptyTEnv;
 }
 
@@ -126,9 +128,9 @@ export const inferTypeOf = (concreteExp: string): Result<string> =>
 // Purpose: Compute the type of an expression
 // Traverse the AST and check the type according to the exp type.
 export const typeofExp = (exp: A.Parsed, tenv: E.TEnv): Result<T.TExp> =>{
-    console.log("IN typeofExp : exp & env")
-    console.log(util.inspect(exp, {showHidden: false, depth: null})) //TODO REMOVE debug
-    console.log(util.inspect(tenv, {showHidden: false, depth: null}))
+    //console.log("IN typeofExp : exp & env")
+    //console.log(util.inspect(exp, {showHidden: false, depth: null})) //TODO REMOVE debug
+    //console.log(util.inspect(tenv, {showHidden: false, depth: null}))
     return A.isNumExp(exp) ? makeOk(T.makeNumTExp()) :
     A.isBoolExp(exp) ? makeOk(T.makeBoolTExp()) :
     A.isStrExp(exp) ? makeOk(T.makeStrTExp()) :
@@ -337,7 +339,6 @@ export const typeofClass = (exp: A.ClassExp, tenv: E.TEnv): Result<T.TExp> => {
     const constraints = zipWithResult((varTE, val) => bind(typeofExp(val, classTEnv),
                                                             (valTE: T.TExp) => checkEqualType(varTE, valTE, exp)),
                                         varTEs, vals);
-    const aaa = R.zipWith((v, t) => ([v, t]), vars, varTEs);
-    //console.log(util.inspect(aaa, {showHidden: false, depth: null}));
-    return bind(constraints, _ => makeOk(T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs))));
+    const classType = T.makeClassTExp(exp.typeName.var, R.zipWith((v, t) => ([v, t]), vars, varTEs));
+    return bind(constraints, _ => makeOk(T.makeProcTExp(R.map((v: A.VarDecl) => v.texp, exp.fields), classType)));
 };

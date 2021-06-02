@@ -257,10 +257,11 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // Then   _Tenv |- (define _x1 _e1) : _U1
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-    let valTE:Result<T.TExp>;
-    A.isProcExp(exp.val)?   valTE = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv)) :
-                            valTE = typeofExp(exp.val, tenv)
-    return bind(valTE, _ => makeOk(T.makeVoidTExp())); 
+    let valTERes:Result<T.TExp> = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.var.texp], tenv))
+    // A.isProcExp(exp.val)?   valTE = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv)) :
+    //                         valTE = typeofExp(exp.val, tenv)
+    let constraint1 = bind(valTERes, (valTE) => checkEqualType(exp.var.texp, valTE, exp))
+    return bind(constraint1, _ => makeOk(T.makeVoidTExp())); 
 };
 
 // Purpose: compute the type of a program
@@ -273,12 +274,11 @@ export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
 
 const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TExp> => 
     isEmpty(exps) ?     typeofExp(exp, tenv) :
-    isDefineExp(exp)?   bind(typeofExp(exp, tenv), _ => bind(typeofExp(exp.val, extEnvIfProc(exp, tenv)),
-                                                            (expTVal: T.TExp)=> typeofProgramExps(first(exps), rest(exps),
-                                                                                    E.makeExtendTEnv([exp.var.var] , [expTVal] ,tenv)))):
+    isDefineExp(exp)?   bind(typeofExp(exp, tenv), _ =>  typeofProgramExps(first(exps), rest(exps),
+                                                                            E.makeExtendTEnv([exp.var.var] , [exp.var.texp] ,tenv))):
                         bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
     //? should we really ignore texp when not relevant to the rest of the program?
-
+//? maybe is not needed 
 const extEnvIfProc = ( exp: A.Exp , tenv: E.TEnv): E.TEnv =>
     isDefineExp(exp) && A.isProcExp(exp.val)?   
                         E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv) :
@@ -292,6 +292,8 @@ const extEnvIfProc = ( exp: A.Exp , tenv: E.TEnv): E.TEnv =>
 
 //     bind(typeofExp(exp, tenv), _ => typeofProgramExps(first(exps), rest(exps),
 //                                             E.makeExtendTEnv([exp.var.var] , [_res_to_val(typeofExp(exp.val, tenv))] ,tenv))) : //! changed to the inside of define
+
+
 // Purpose: compute the type of a literal expression
 //      - Only need to cover the case of Symbol and Pair
 //      - for a symbol - record the value of the symbol in the SymbolTExp

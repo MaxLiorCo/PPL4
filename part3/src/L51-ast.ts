@@ -346,7 +346,7 @@ const parseGoodClassExp = (typeName: Sexp, varDecls: Sexp, bindings: Sexp): Resu
     //console.log(util.inspect(bindings, {showHidden: false, depth: null}));
     const resultedVars: Result<VarDecl[]> = mapResult((variable) => parseVarDecl(variable), varDecls);
     const bindingsResult = parseBindings(bindings);
-    console.log(util.inspect(bindingsResult, {showHidden: false, depth: null}));
+    //console.log(util.inspect(bindingsResult, {showHidden: false, depth: null}));
     return safe2((vars: VarDecl[], bindings: Binding[]) => makeOk(makeClassExp(makeTVar(typeName), vars, bindings)))
                 (resultedVars, bindingsResult);
 }  

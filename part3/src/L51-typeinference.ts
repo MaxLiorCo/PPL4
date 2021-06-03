@@ -111,7 +111,6 @@ export const makeTEnvFromClasses = (parsed: A.Parsed): E.TEnv => {
     const typeNamesVar = R.map((c: A.ClassExp) => c.typeName.var, allClasses);
     const classTExps =  mapResult((c: A.ClassExp) => typeofClass(c, emptyTEnv), allClasses);
     const blyat = bind(classTExps, (texps: T.TExp[]) => makeOk(E.makeExtendTEnv(typeNamesVar, texps, emptyTEnv)));
-
     return isOk(blyat) ? blyat.value : emptyTEnv;
 }
 

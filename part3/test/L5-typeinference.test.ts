@@ -371,31 +371,3 @@ describe('L5 Type Inference', () => {
     });
 });
 
-// describe("typeofExp", ()=>{
-//     it('infers the type of primitives car, cdr, cons', () => {
-//                     const program1 = 
-//                     `(L5 (define x 'a)
-//                          (cons x x))`;
-//                     expect(verifyTeOfExprWithInference(program1, `cons`)).to.deep.equal(makeOk(true));
-        
-//                     const program2 = 
-//                     `(L5 (define x '(a b))
-//                          (car x))`;
-//                     expect(verifyTeOfExprWithInference(program2, `T`)).to.deep.equal(makeOk(true));
-        
-//                     const program3 = 
-//                     `(L5 (define x '(a b))
-//                          (cdr x))`;
-//                     expect(verifyTeOfExprWithInference(program3, `T`)).to.deep.equal(makeOk(true));
-        
-//                     const program4 = 
-//                     `(L5 (define x 'a)
-//                          (car x))`;
-//                     expect(verifyTeOfExprWithInference(program4, `T`)).to.satisfy(isFailure);
-        
-//                     const program5 = 
-//                     `(L5 (define x 'a)
-//                          (cdr x))`;
-//                     expect(verifyTeOfExprWithInference(program5, `T`)).to.satisfy(isFailure);
-//                 });
-// });

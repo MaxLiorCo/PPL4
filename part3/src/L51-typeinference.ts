@@ -259,10 +259,8 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
     let valTERes:Result<T.TExp> = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.var.texp], tenv))
-    // A.isProcExp(exp.val)?   valTE = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv)) :
-    //                         valTE = typeofExp(exp.val, tenv)
-    //let constraint1 = bind(valTERes, (valTE) => checkEqualType(exp.var.texp, valTE, exp))
-    return bind(valTERes, (valTE) => {exp.var.texp = valTE; return makeOk(T.makeVoidTExp())}); 
+    const constraint = bind(valTERes, (valTE: T.TExp)=> checkEqualType(exp.var.texp, valTE, exp))
+    return bind(constraint, _ => makeOk(T.makeVoidTExp())); 
 };
 
 // Purpose: compute the type of a program
@@ -285,13 +283,8 @@ const typeofProgramExps = (exp: A.Exp, exps: A.Exp[], tenv: E.TEnv): Result<T.TE
     isEmpty(exps) ?     typeofExp(exp, tenv) :
     isDefineExp(exp)?   bind(typeofExp(exp, tenv), _ =>  typeofProgramExps(first(exps), rest(exps),
                                                                             E.makeExtendTEnv([exp.var.var] , [exp.var.texp] ,tenv))):
-                        bind(typeofExp(exp, tenv), () => typeofProgramExps(first(exps), rest(exps),tenv))
+                        bind(typeofExp(exp, tenv), _ => typeofProgramExps(first(exps), rest(exps),tenv))
     //? should we really ignore texp when not relevant to the rest of the program?
-//? maybe is not needed 
-const extEnvIfProc = ( exp: A.Exp , tenv: E.TEnv): E.TEnv =>
-    isDefineExp(exp) && A.isProcExp(exp.val)?   
-                        E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv) :
-                        tenv 
 
 // const _res_to_val = <T>(res:Result<T>): T => 
 //     isOk(res)? res.value : undefined

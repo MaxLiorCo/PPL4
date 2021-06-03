@@ -6,7 +6,7 @@
 // typed class construct
 const util = require('util');
 
-import { concat, chain, join, map, zipWith } from "ramda";
+import { concat, chain, join, map, zipWith, reduce } from "ramda";
 import { Sexp, Token } from 's-expression';
 import { isCompoundSExp, isEmptySExp, isSymbolSExp, makeCompoundSExp, makeEmptySExp, makeSymbolSExp, SExpValue, valueToString } from '../imp/L5-value';
 import { allT, first, rest, second, isEmpty } from '../shared/list';
@@ -468,39 +468,10 @@ export const parsedToClassExps = (p: Parsed): ClassExp[] =>
     [];
 
 
-
 const getAllClassExps = (e: Exp): ClassExp[] => 
     isCExp(e) && isClassExp(e) ? [e] :
     isDefineExp(e) && isClassExp(e.val) ? [e.val] :
     [];
-
-
-// const getAllClassCExps = (e: CExp): ClassExp[] => {
-//     isNumExp(e) ? [] :
-//     isStrExp(e) ? [] :
-//     isBoolExp(e) ? [] :
-//     isPrimOp(e) ? [] :
-//     isVarRef(e) ? [] :
-//     // AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp
-//     isAppExp(e) ? map(,e.) :
-//     isIfExp(e) ? (() => {
-//         getAllSubCExps(e.test);
-//         getAllSubCExps(e.then);
-//         getAllSubCExps(e.alt);
-//     })() :
-//     isLetExp(e) ? (() => {
-//         map(getAllSubCExps(e.body);
-//     })() :
-//     isLetrecExp(e) ? unparseLetrecExp(e, unparseWithTVars) :
-//     isProcExp(e) ? unparseProcExp(e, unparseWithTVars) :
-//     isLitExp(e) ? makeOk(unparseLitExp(e)) :
-//     isSetExp(e) ? unparseSetExp(e, unparseWithTVars) :
-//     isClassExp(e) ? e :
-//     // DefineExp | Program
-//     isDefineExp(e) ?  :
-//     isProgram(e) ? bind(unparseLExps(e.exps, unparseWithTVars), (exps: string) => makeOk(`(L5 ${exps})`)) :
-//     e;
-// }
 
 
 

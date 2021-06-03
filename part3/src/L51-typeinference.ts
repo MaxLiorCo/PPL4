@@ -128,9 +128,9 @@ export const inferTypeOf = (concreteExp: string): Result<string> =>
 // Purpose: Compute the type of an expression
 // Traverse the AST and check the type according to the exp type.
 export const typeofExp = (exp: A.Parsed, tenv: E.TEnv): Result<T.TExp> =>{
-    //console.log("IN typeofExp : exp & env")
-    //console.log(util.inspect(exp, {showHidden: false, depth: null})) //TODO REMOVE debug
-    //console.log(util.inspect(tenv, {showHidden: false, depth: null}))
+    // console.log("IN typeofExp : exp & env")
+    // console.log(util.inspect(exp, {showHidden: false, depth: null})) //TODO REMOVE debug
+    // console.log(util.inspect(tenv, {showHidden: false, depth: null}))
     return A.isNumExp(exp) ? makeOk(T.makeNumTExp()) :
     A.isBoolExp(exp) ? makeOk(T.makeBoolTExp()) :
     A.isStrExp(exp) ? makeOk(T.makeStrTExp()) :
@@ -254,21 +254,28 @@ export const typeofLetrec = (exp: A.LetrecExp, tenv: E.TEnv): Result<T.TExp> => 
 // variable _x1
 // expressions _e1
 // and type expressions _S1, _U1:
-// If     _Tenv |- _e1:_S1
-//        _Tenv o { _x1: _S1} |- _e1:_S1 //! switched x e
+// If     _Tenv o { _x1: _S1}|- _e1:_S1
 // Then   _Tenv |- (define _x1 _e1) : _U1
 // TODO - write the typing rule for define-exp
 export const typeofDefine = (exp: A.DefineExp, tenv: E.TEnv): Result<T.VoidTExp> => {
     let valTERes:Result<T.TExp> = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.var.texp], tenv))
     // A.isProcExp(exp.val)?   valTE = typeofExp(exp.val, E.makeExtendTEnv([exp.var.var], [exp.val.returnTE], tenv)) :
     //                         valTE = typeofExp(exp.val, tenv)
-    let constraint1 = bind(valTERes, (valTE) => checkEqualType(exp.var.texp, valTE, exp))
-    return bind(constraint1, _ => makeOk(T.makeVoidTExp())); 
+    //let constraint1 = bind(valTERes, (valTE) => checkEqualType(exp.var.texp, valTE, exp))
+    return bind(valTERes, (valTE) => {exp.var.texp = valTE; return makeOk(T.makeVoidTExp())}); 
 };
 
 // Purpose: compute the type of a program
 // Typing rule:
 //   (L5 <exp>+)
+// expressions _e1,...,_ek
+// type expressions _S1, ..., _Sk
+// If   _Tenv |- _e1 : _S1
+//      .
+//      .
+//      .
+//      _Tenv |- _ek : _Sk
+// Then _Tenv |- (L5 <exp>+): _Sk
 export const typeofProgram = (exp: A.Program, tenv: E.TEnv): Result<T.TExp> =>
     // similar to typeofExps but threads variables into tenv after define-exps
     isEmpty(exp.exps) ? makeFailure("Empty program") :
@@ -312,16 +319,16 @@ export const typeofLit = (exp: A.LitExp): Result<T.TExp> =>
 // For every:   type environment _Tenv,
 //              variable _x1
 //              expressions _e1
-//              and type expressions _S1, _S2, _U1:
-// If       _Tenv |- _e1:_S1
-// 	        _Tenv o { _x1: _S1} |- _x1:_S2
+//              and type expressions _S1, _U1:
+// If       _Tenv o { _x1: _S1}|- _e1:_S1
 // Then     _Tenv |- (set! _x1 _e1) : _U1
 // TODO - write the typing rule for set-exp
 export const typeofSet = (exp: A.SetExp, tenv: E.TEnv): Result<T.VoidTExp> => {
-    const valTE = typeofExp(exp.val, tenv);
-    const var_is_defined = E.applyTEnv(tenv, exp.var.var)
-    return safe2((valTE, prev_varTE) => makeOk(T.makeVoidTExp()))(valTE, var_is_defined) 
-    //? we only check if _e1 currect & _x1 exists. not changing _x1 Texp
+    const varTE : Result<T.TExp> = E.applyTEnv(tenv, exp.var.var)
+    const valTE : Result<T.TExp> = typeofExp(exp.val, tenv);
+    const constraint = safe2((varTE: T.TExp, valTE: T.TExp) => checkEqualType(varTE, valTE, exp))(varTE, valTE)
+    return bind(constraint, _ => makeOk(T.makeVoidTExp()))
+    //* we only check if:  _x1 exists && _e1 same type as original _x1
 };
 
 // Purpose: compute the type of a class-exp(type fields methods)
